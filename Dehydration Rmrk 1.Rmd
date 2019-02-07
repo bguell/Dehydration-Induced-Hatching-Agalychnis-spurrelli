@@ -1,0 +1,1344 @@
+---
+title: "Dehydration induced hatching in gliding treefrog embryos"
+author: "Katherine González & Brandon Güell"
+date: "20190207"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+> The statistical analysis shown here are from the González et. al. dehyration induced hatching manuscript. Analysis are shows in chronological order as reported in the manuscript. We show details on importing, manipulating, summarizing, analyzing, and visualizing the data. See manuscript for details on background, research questions, hypothesis, methods, etc.
+
+
+# Import Data de excel
+```{r}
+library(readxl)
+bd=read_excel("~/Desktop/Warkentin Lab/2018/Osa/Data/Dehydration Induced Hatching A.s./Dehydration Data.xlsx", na = "NA",
+    col_types = c("numeric", "numeric", "numeric", 
+        "numeric", "numeric", "text", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "text", "numeric", 
+        "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
+        "text"))
+bd$treatment = as.factor(bd$treatment)
+bd
+```
+
+## Remove all of clutch 119 (all undeveloped) and clean up a bit
+```{r}
+library(dplyr)
+bd= bd %>%
+  filter(clutch != 119) %>%
+  dplyr::select(age_t, clutch, treatment, n_eggs:clutch_thickness, clutch_length:average_egg_size, average_tadlength:average_tad_length) %>%
+  arrange(clutch)
+bd
+```
+
+## Separate experiments
+
+* Clutches 53-76 had both *humid* and *very dry* treatments (12 total)
+* Clutches 104-127 had both *humid* and *dry* treatments (23 total (C119 no good))
+
+# *VERY DRY vs HUMID*
+```{r}
+verydry = bd %>%
+  filter(clutch < 100)
+levels(as.factor(verydry$treatment))
+```
+
+# Initial Visualization
+```{r}
+library(ggplot2)
+library(scales)
+legend_title= "Treatment"
+
+g=ggplot(verydry, aes(x=age_t, y=clutch_thickness)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "darkgrey")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "darkgrey")) 
+g
+
+g=ggplot(verydry, aes(x=age_t, y=average_eggsize)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average egg size (cm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "darkgrey")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "darkgrey")) 
+  g
+  
+g=ggplot(verydry, aes(x=age_t, y=average_tad_length)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average tadpole length (cm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(3.5,8.5), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "darkgrey")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "darkgrey")) +
+  facet_grid(treatment~.) # ()
+  g
+```
+
+
+********************************
+********************************
+********************************
+
+1st series -- non-split clutch design
+> note that WH1 HOBO sensor === humid treatment
+  WH2 HOBO sensor == very dry treatment
+  
+  
+2nd series -- split clutch design
+> WH1 == humid
+  WH2 == dry treatment
+  
+3rd series -- split clutch design
+> WH1 == humid
+  WH2 == dry treatment
+
+
+# **Temp Data** -- VERY DRY
+```{r}
+library(readxl)
+dtd <- read_excel("~/Desktop/Warkentin Lab/2018/Osa/Data/Dehydration Induced Hatching A.s./Dehydration Data.xlsx", sheet = "Raw Temp_RH data",  col_types = c("numeric", "text", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric"))
+dtd
+```
+
+## Tidy up data
+```{r}
+library(tidyr)
+library(dplyr)
+dtd = gather(data= dtd, key ="Sensor", value = "Value",6:11) #put all values into value and sensor type into key
+dtd
+
+dtd= mutate(dtd, Type = ifelse(grepl("T", Sensor), "Temperature", ifelse(grepl("RH", Sensor), "Relative Humidity", "idk")))
+dtd # ifelse and grepl look for matches in hte colum and give new name for the mutate... conditional mutate
+```
+
+
+
+### *Humid vs VERY DRY Experiment*:
+```{r}
+humid = dtd %>%
+  filter(Sensor != "BT1") %>%
+  filter(Sensor != "BT2") %>%
+  filter(treatment == "very dry")
+humid
+
+unique(humid$Type)
+
+# humid temp
+humidtemp = humid %>%
+  filter(Type == "Temperature")
+humidtemp
+
+# humid humidity
+humidrh = humid %>%
+  filter(Type == "Relative Humidity")
+humidrh
+```
+
+#### Temp
+```{r}
+humidtemp
+humidtempsum= humidtemp %>%
+  group_by(Sensor) %>%
+  summarise(min= min(Value), max= max(Value), mean_temp= mean(Value), sample_size=n())
+humidtempsum
+```
+
+> HUMID:
+
+* mean temp == 27.11052
+* range temp == 23.424--32.924
+
+> VERY DRY:
+
+* mean temp == 27.54733
+* range temp == 23.472--34.124
+
+
+* sample size == 423
+* 30min incriments, 2 WHITE sensors
+
+#### Humidity
+```{r}
+humidrh
+humidrhsum= humidrh %>%
+  group_by(Sensor) %>%
+  summarise(min= min(Value), max= max(Value), mean_humidity= mean(Value), sample_size=n())
+humidrhsum
+```
+
+> HUMID:
+
+* mean humidity == 97.98156
+* range humidity == 75.6--100
+
+> VERY DRY:
+
+* mean humidity == 92.23215
+* range humidity == 66.5--100
+
+
+* sample size == 423
+* 30min incriments, 2 WHITE sensors
+
+
+#### Visualizations
+##### Raw data
+```{r}
+library(ggplot2)
+library(scales)
+legend_title = "Treatment"
+
+g=ggplot(humidtemp, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor)) +
+  labs(y="Temperature", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
+  scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
+g
+
+library(ggplot2)
+library(scales)
+legend_title = "Treatment"
+g=ggplot(humidrh, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor)) +
+  labs(y="Relative Humidity", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.1), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
+g
+```
+
+
+#### Stats on temp
+```{r}
+m=lm(data=humidtemp, Value~Sensor*age)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 2.727; df== 3,842
+* overall treatment **p-value** == 0.04309 NS
+
+* Sensor        F= 7.8787  0.005117 **
+* age           F= 0.0008  0.977492 NS
+* Sensor:age    F= 0.3011 0.583341 NS
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** < 2.2e-16
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+
+##### Nonparametric stats:
+```{r}
+kwt=kruskal.test(data=humidtemp, Value~as.factor(Sensor))
+kwt
+
+kwt=kruskal.test(data=humidtemp, Value~age)
+kwt
+```
+* *X^2* == 4.7719; df== 1
+* TREATMENT **p-value** == 0.02893 **
+
+
+* *X^2* == 837.92; df== 422
+* AGE **p-value** == < 2.2e-16 ***
+
+
+> Interpretation-- *Temperature* differed significantly among humid and *very dry* treatments and it showed a significant decrease trends over the course of hte experiment. 
+
+
+
+#### Stats on humidity
+```{r}
+m=lm(data=humidrh, Value~Sensor*age)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 69.15; df== 3,842 
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* Sensor        F= 169.6881 < 2.2e-16 ***
+* age           F= 36.4517  2.345e-09 ***
+* Sensor:age    F= 1.2957  0.2553 NS
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** < 2.2e-16
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+
+##### Nonparametric stats:
+```{r}
+kwt=kruskal.test(data=humidrh, Value~as.factor(Sensor))
+kwt
+
+kwt=kruskal.test(data=humidrh, Value~age)
+kwt
+```
+* *X^2* == 304.55; df== 1
+* TREATMENT **p-value** < 2.2e-16 ***
+
+
+* *X^2* == 437.49; df== 422
+* AGE **p-value** == 0.2913 NS
+
+
+> Interpretation-- *Humidity* differed significantly among humid and *very dry* treatments and no effect of age on humidity.
+
+
+> THIS IS KEY HERE
+
+
+**********************
+**********************
+**********************
+**********************
+
+
+
+### **Humid vs DRY Experiment**:
+```{r}
+humid2 = dtd %>%
+  filter(Sensor != "BT1") %>%
+  filter(Sensor != "BT2") %>%
+  filter(treatment == "dry")
+humid2
+
+unique(humid2$Type)
+
+# humid temp
+humidtemp = humid2 %>%
+  filter(Type == "Temperature")
+humidtemp
+
+# humid humidity
+humidrh = humid2 %>%
+  filter(Type == "Relative Humidity")
+humidrh
+```
+
+#### Humid Temp
+```{r}
+humidtemp
+humidtempsum= humidtemp %>%
+  group_by(Sensor) %>%
+  summarise(min= min(Value), max= max(Value), mean_temp= mean(Value), sample_size=n())
+humidtempsum
+```
+> HUMID:
+
+* mean temp == 26.71280
+* range temp == 22.729--33.365
+
+> VERY DRY:
+
+* mean temp == 26.92227
+* range temp == 22.681--34.124
+
+
+* sample size == 871
+* 30min incriments, 2 WHITE sensors
+
+#### Humid Humidity
+```{r}
+humidrh
+humidrhsum= humidrh %>%
+  group_by(Sensor) %>%
+  summarise(min= min(Value), max= max(Value), mean_humidity= mean(Value), sample_size=n())
+humidrhsum
+```
+
+> HUMID:
+
+* mean humidity == 99.61825
+* range humidity == 74.2--100
+
+> VERY DRY:
+
+* mean humidity == 96.31814
+* range humidity == 67.9--100
+
+
+* sample size == 871
+* 30min incriments, 2 WHITE sensors
+
+
+#### Visualizations
+##### Raw data
+```{r}
+library(ggplot2)
+library(scales)
+legend_title = "Treatment"
+
+g=ggplot(humidtemp, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor)) +
+  labs(y="Temperature", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
+  scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
+g
+
+library(ggplot2)
+library(scales)
+legend_title = "Treatment"
+g=ggplot(humidrh, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor)) +
+  labs(y="Relative Humidity", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.1), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
+g
+```
+
+
+#### Stats on temp
+```{r}
+m=lm(data=humidtemp, Value~Sensor*age)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 3.601; df== 3,842
+* overall treatment **p-value** == 0.01302 *
+
+* Sensor        F= 4.0067  0.04547 *
+* age           F= 6.2110  0.01279 *
+* Sensor:age    F= 0.5849 0.44450 NS
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** < 2.2e-16
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+
+##### Nonparametric stats:
+```{r}
+kwt=kruskal.test(data=humidtemp, Value~as.factor(Sensor))
+kwt
+
+kwt=kruskal.test(data=humidtemp, Value~age)
+kwt
+```
+* *X^2* == 1.6321; df== 1
+* TREATMENT **p-value**  0.2014 NS
+
+
+* *X^2* == 1733.8; df== 870
+* AGE **p-value** ==  < 2.2e-16 ***
+
+
+> Interpretation-- *Temperature* did not differ significantly among humid and dry treatments though it did show significant increasing trends over the course of hte experiment. 
+
+
+
+#### Stats on humidity
+```{r}
+m=lm(data=humidrh, Value~Sensor*age)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 101.5; df== 3,1738 
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* Sensor        F= 211.920 < 2.2e-16 ***
+* age           F= 45.863  1.729e-11 ***
+* Sensor:age    F= 46.857  1.055e-11 ***
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** < 2.2e-16
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+
+##### Nonparametric stats:
+```{r}
+kwt=kruskal.test(data=humidrh, Value~as.factor(Sensor))
+kwt
+
+kwt=kruskal.test(data=humidrh, Value~age)
+kwt
+```
+* *X^2* == 387.89; df== 1
+* TREATMENT **p-value** < 2.2e-16 ***
+
+
+* *X^2* == 829.49; df== 422
+* AGE **p-value** == 0.8341 NS
+
+
+
+> Interpretation-- *Humidity* differed significantly among humid and dry treatments. This effect was not a factor of age.
+
+> THIS IS KEY HERE
+
+
+
+**********************
+**********************
+**********************
+**********************
+
+
+
+
+********************************
+********************************
+********************************
+********************************
+********************************
+********************************
+********************************
+********************************
+********************************
+
+
+
+
+## **Clutch Thickness over time**
+### Visualizations:
+#### Raw data
+```{r}
+g=ggplot(verydry, aes(x=age_t, y=clutch_thickness)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray"))
+g
+```
+
+> began measurements at 2d 18:00, thickness was not measured at 4d at 18:00 and was only measured in very dry on 5d due to sensitivity of wet clutches to hatching... dry ones were mostly dead
+
+```{r}
+thicknesssumm = verydry %>%
+  group_by(treatment, age_t) %>%
+  summarise(meanthickness = mean(clutch_thickness), SE= sd(clutch_thickness)/sqrt(length(clutch_thickness)), sample_size=n()) %>%
+  na.omit()
+thicknesssumm
+```
+
+#### Summarized data:
+```{r}
+legend_title = "Hydration\ntreatment"
+g=ggplot(thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
+  geom_point(aes(color=treatment)) + 
+  geom_line(aes(color = treatment)) +
+  geom_errorbar(aes(ymin=meanthickness-SE, ymax=meanthickness+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
+  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(fill = NA, color = "black", size=1), legend.title = element_blank(), legend.background = element_blank(), legend.position= c(.9,.9), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  # put legend inside plot, get rid of legend background, get rid of legend title
+  scale_x_continuous(limits=c(.5,6), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("blue", "darkgrey")) +
+  scale_fill_manual(guide = FALSE, values = c("blue", "darkgrey")) +
+  geom_text(aes(y= c(3.8), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(2.6), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5)
+g
+```
+
+
+### Stats:
+```{r}
+m=lm(data=verydry, clutch_thickness~treatment*age_t)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 62.86; df== 3,80
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* treatment        F= 109.520 < 2.2e-16 ***
+* age_t            F= 10.424  0.001805 ** 
+* treatment:age_t  F= 42.426 6.002e-09 ***
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == 0.772
+
+*** NORMALLY DIST** so stats ARE good!
+
+
+*******************
+*******************
+*******************
+*******************
+
+## **Average Egg Size over time**
+
+### Visualizations:
+#### Raw data
+```{r}
+test = verydry %>%
+  group_by(treatment, age_t) %>%
+  dplyr::select(age_t, clutch, treatment, average_egg_size) %>%
+  na.omit()
+test
+```
+
+```{r}
+g=ggplot(verydry, aes(x=age_t, y=average_egg_size)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average egg size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("blue", "darkgrey")) +
+  scale_fill_manual(guide = FALSE, values = c("blue", "darkgrey")) +
+  facet_grid(treatment~.) # ()
+  g
+```
+
+```{r}
+eggsizesum = verydry %>%
+  group_by(treatment, age_t) %>%
+  summarise(meaneggsize = mean(average_egg_size), SE= sd(average_egg_size)/sqrt(length(average_egg_size)), sample_size=n()) %>%
+  na.omit()
+eggsizesum
+```
+
+#### Summarized data:
+```{r}
+g=ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
+  geom_point(aes(color=treatment)) + 
+  geom_line(aes(color = treatment)) +
+  geom_errorbar(aes(ymin=meaneggsize-SE, ymax=meaneggsize+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
+  labs(y="Mean egg size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(.5,6), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(limits=c(2.5,4.5), breaks= pretty_breaks(n=7)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("blue", "darkgrey")) +
+  scale_fill_manual(guide = FALSE, values = c("blue", "darkgrey")) +
+  geom_text(aes(y= c(3.75), x= c(1.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(3.3), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(3.05), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(3.0), x= c(4.75), label= "***"), color= "black", vjust = 0, size = 5) 
+  g
+```
+
+> photos were not taken (measurements not done) at 5d 18:00 for humid due to sensitivity of clutches to hatching
+
+### Stats:
+```{r}
+m=lm(data=verydry, average_egg_size~treatment*age_t)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 211.5; df== 3,128
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* treatment        F= 406.087 < 2.2e-16 ***
+* age_t            F= 27.161  7.29e-07  ***
+* treatment:age_t  F= 157.083 < 2.2e-16 ***
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == 0.6915
+
+**NORMALLY DIST** so stats are good!
+
+
+
+******************************
+******************************
+******************************
+******************************
+******************************
+
+
+
+
+
+## **Tadpole length**
+
+> not really worth it for very dry b/c
+
+
+
+
+
+******************************
+******************************
+******************************
+******************************
+******************************
+
+
+
+
+## **Mortality/Survivorship**
+```{r}
+verydry = verydry %>%
+    group_by(clutch,age_t,treatment) %>%
+  mutate(total_hatched = max(hatched_accumalative), total_timepointhatch = hatched_time_point/total_hatched, totalacummhatch= hatched_accumalative/total_hatched, survivorship = total_hatched/n_eggs_excluding_undev)
+verydry
+
+survival= verydry %>%
+  group_by(clutch,treatment) %>%
+  dplyr::select(clutch, treatment, total_hatched, survivorship) %>%
+  filter(survivorship == max(survivorship)) %>%
+  summarise(meansurvival = mean(survivorship), SE =sd(survivorship)/sqrt(length(survivorship)), sample_size=n())
+survival
+
+survivalsumm = survival %>%
+  group_by(treatment) %>%
+  summarise(meansurvivalsum = mean(meansurvival), SE =sd(meansurvival)/sqrt(length(meansurvival)), sample_size=n())
+survivalsumm
+```  
+
+### Visualization
+```{r}
+legend_title = "Hydration Treatment"
+g=ggplot(survivalsumm, aes(x=treatment, y=meansurvivalsum)) + #add the axis
+  geom_bar(stat="identity", aes(fill=treatment), position=position_dodge(.9), width = .9) + # use barplots w/time of day filled w/color
+  geom_errorbar(aes(ymin=meansurvivalsum-SE, ymax=meansurvivalsum+SE, color = treatment), width= .05, size= .5, position=position_dodge(.9) ) +
+  labs(y="Proportion survived", x="Hydration treatment") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="none", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_y_continuous(limits = c(0,1.1), expand = c(0, 0), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  geom_text(aes(y= 1, x = "humid", label= "***"), color= "black", vjust = 0, size = 5) #add significance star/astrix
+g
+```
+
+### Stats:
+```{r}
+m=lm(data=verydry, survivorship~treatment)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 278.3; df== 1,838
+* overall treatment **p-value** == < 2.2e-16 ***
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == < 2.2e-16
+
+***NOT NORMALLY DIST** so stats are not good!
+
+#### Nonparametric stats here:
+```{r}
+kwt=kruskal.test(data=verydry, survivorship~as.factor(treatment))
+kwt
+```
+* *X^2* == 210.61; df== 1,838
+* overall treatment **p-value** == < 2.2e-16 ***
+
+
+
+
+
+
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+*******************
+
+
+
+
+# *DRY vs HUMID*
+```{r}
+dry = bd %>%
+  filter(clutch > 100)
+dry
+dry$treatment <- factor(dry$treatment, levels = rev(levels(dry$treatment)))
+levels(dry$treatment)
+unique(dry$treatment)
+```
+
+# Initial Visualization
+```{r}
+library(ggplot2)
+library(scales)
+legend_title= "Treatment"
+
+g=ggplot(dry, aes(x=age_t, y=clutch_thickness)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  facet_grid(treatment~.) # remove title for shading colors...
+g
+
+g=ggplot(dry, aes(x=age_t, y=average_egg_size)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average egg size (cm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  facet_grid(treatment~.) # ()
+g
+  
+g=ggplot(dry, aes(x=age_t, y=average_tad_length)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average tadpole length (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(3.5,8.5), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  facet_grid(treatment~.) # ()
+g
+
+g=ggplot(dry, aes(x=age_t, y=dry$accumulative_prop_hatched)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Proportion embryos hatched", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(limits=c(0,1), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) 
+  g
+```
+
+
+## **Clutch Thickness over time**
+### Visualizations:
+#### Raw data
+```{r}
+g=ggplot(dry, aes(x=age_t, y=clutch_thickness)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(0,6), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  facet_grid(treatment~.) # ()
+g
+```
+
+> two iterations of this experiment 104-115 and 116-127began measurements at 2d 18:00, thickness was not measured at 4d at 18:00 and was only measured in very dry on 5d due to sensitivity of wet clutches to hatching... dry ones were mostly dead
+
+
+```{r}
+#testing stuff only do not run
+
+filter(dry, clutch_thickness >0) %>%
+  dplyr::select(age_t, clutch, treatment, clutch_thickness) %>%
+  arrange(treatment, clutch)
+```
+
+
+```{r}
+thicknesssumm = dry %>%
+  group_by(treatment, age_t) %>%
+  summarise(meanthickness = mean(na.omit(clutch_thickness)), SE= sd(na.omit(clutch_thickness))/sqrt(length(na.omit(clutch_thickness))), sample_size=n()) %>%
+  na.omit()
+thicknesssumm
+```
+
+#### Summarized data:
+```{r}
+g=ggplot(data = thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
+  geom_point(aes(color=treatment)) + 
+  geom_line(aes(color = treatment)) +
+  geom_errorbar(aes(ymin=meanthickness-SE, ymax=meanthickness+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
+  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(0,4.8), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values =  c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values =  c("darkblue", "dimgray")) +
+  geom_text(aes(y= c(4.56), x= c(1.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(4.3), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(4.55), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5)
+g
+```
+
+
+> this initial increase is likely due to initial hydration of eggs upon collection...
+
+### Stats:
+```{r}
+m=lm(data=dry, clutch_thickness~treatment*age_t)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 31.86; df== 3,230
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* treatment        F= 51.2515 = 2.063e-13 ***
+* age_t            F= 0.0093  0.5367 NS
+* treatment:age_t  F= 26.5723 1.787e-08 ***
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == 0.002281
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+#### Nonparametric stats here:
+```{r}
+kwt=kruskal.test(data=dry, clutch_thickness~as.factor(treatment))
+kwt
+kwt=kruskal.test(data=dry, clutch_thickness~as.factor(age_t))
+kwt
+```
+* *X^2* == 47.71; df== 1,230
+* treatment **p-value** == 4.941e-12 ***
+
+* *X^2* == 15.819; df== 5,230
+* treatment **p-value** == 0.007381 ***
+
+
+
+*******************
+*******************
+*******************
+*******************
+
+
+## **Average Egg Size over time**
+
+### Visualizations:
+#### Raw data
+```{r}
+test = dry %>%
+  group_by(treatment, age_t) %>%
+  dplyr::select(age_t, clutch, treatment, average_egg_size) %>%
+  na.omit()
+test
+```
+
+```{r}
+g=ggplot(dry, aes(x=age_t, y=average_egg_size)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average egg size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits =c(0,5), breaks= pretty_breaks(n=6)) + # allows fo.. only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values =c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values =c("darkblue", "dimgray")) +
+  facet_grid(treatment~.) # ()
+  g
+```
+
+```{r}
+#testing stuff only do not run
+dry %>%
+  dplyr::select(age_t, clutch, treatment, average_egg_size) %>%
+  arrange(treatment, clutch) %>%
+  na.omit()
+
+eggsizesum = dry %>%
+  group_by(treatment, age_t) %>%
+  summarise(meaneggsize = mean(average_egg_size), SE= sd(average_egg_size)/sqrt(length(average_egg_size)), sample_size=n()) %>%
+  na.omit()
+eggsizesum
+```
+
+#### Summarized data:
+```{r}
+legend_title = "Treatment"
+g=ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
+  geom_point(aes(color=treatment)) + 
+  geom_line(aes(color = treatment)) +
+  geom_errorbar(aes(ymin=meaneggsize-SE, ymax=meaneggsize+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
+  labs(y="Mean egg size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(0,6), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  geom_text(aes(y= c(3.475), x= c(1.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(3.425), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(3.475), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5) +
+  geom_text(aes(y= c(3.35), x= c(4.75), label= "***"), color= "black", vjust = 0, size = 5)
+g
+```
+
+> photos were not taken (measurements not done) at 5d 18:00 for humid due to sensitivity of clutches to hatching...
+from two distinct sets we took pictures at 6 am for one set adn the other at 3pm and both at 6pm of 0d....
+
+### Stats:
+```{r}
+m=lm(data=dry, average_egg_size~treatment*age_t)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 115.4; df== 3,271
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* treatment        F= 208.782 < 2.2e-16 ***
+* age_t            F= 19.303  1.602e-05  ***
+* treatment:age_t  F= 117.576 < 2.2e-16 ***
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == 0.1968
+
+**NORMALLY DIST** so stats are good!
+
+
+
+
+*******************
+*******************
+*******************
+*******************
+
+
+
+## **Tadpole length**
+### Visualizations:
+#### Raw data
+```{r}
+g=ggplot(dry, aes(x=age_t, y=average_tad_length)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Average tadpole length (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(4.5,8.5), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  facet_grid(treatment~.) # ()
+g
+```
+
+```{r}
+tadpolelengthsum = dry %>%
+  group_by(treatment, age_t) %>%
+  summarise(meantadpolelength = mean(na.omit(average_tad_length)), SE= sd(na.omit(average_tad_length))/sqrt(length(na.omit(average_tad_length))), sample_size=n()) %>%
+  filter(meantadpolelength > 0)
+  tadpolelengthsum
+```
+
+#### Summarized data:
+```{r}
+g=ggplot(data = tadpolelengthsum, aes(x=age_t, y=meantadpolelength)) + #add the axis
+  geom_point(aes(color=treatment)) + 
+  geom_line(aes(color = treatment)) +
+  geom_errorbar(aes(ymin=meantadpolelength-SE, ymax=meantadpolelength+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
+  labs(y="Mean hatchling length (mm)", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=18) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(limits=c(4.75,8.5),breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(limits=c(8.5,14), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values =  c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values =  c("darkblue", "dimgray")) 
+g
+```
+
+
+### Stats:
+```{r}
+m=lm(data=dry, average_tad_length~treatment*age_t)
+summary(m)
+
+library(car)
+Anova(m)
+```
+* *F value* == 50.28; df== 3,86
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* treatment        F= 62.222  8.904e-12 ***
+* age_t            F= 26.089  9.311e-06 ***
+* treatment:age_t  F= 0.103   0.7491 NS
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == 0.02
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+#### Nonparametric stats here:
+```{r}
+kwt=kruskal.test(data=dry, average_tad_length~as.factor(treatment))
+kwt
+kwt=kruskal.test(data=dry, average_tad_length~as.factor(age_t))
+kwt
+```
+* *X^2* == 48.317; df== 1,
+* treatment **p-value** == 3.626e-12 ***
+ ***
+
+* *X^2* == 43.234; df== 11,
+* treatment **p-value** == 9.889e-06 ***
+
+
+
+
+*******************
+*******************
+*******************
+*******************
+
+
+
+
+## **Hatching Timing**
+### Visualizations:
+#### Raw data
+```{r}
+library(ggplot2)
+library(scales)
+legend_title = "Treatment"
+g=ggplot(dry, aes(x=age_t, y=dry$accumulative_prop_hatched)) + #add the axis
+  geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
+  labs(y="Proportion embryos hatched", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(limits=c(0,1), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) 
+  g
+```
+
+
+Do stats on this chunk!
+```{r}
+ht = dry %>%
+    group_by(clutch,treatment) %>%
+  mutate(total_hatched = max(hatched_accumalative), totalprop_timepointhatch = hatched_time_point/total_hatched, totalprop_acummhatch= hatched_accumalative/total_hatched) %>%
+  filter(total_hatched != 0, age_t > 3.9) %>%
+  
+  
+  # need to take out data with lots of 0s from 0d-4d or else stats dont hold up and get error... too 0 heavy
+  
+  
+  
+  dplyr::select(age_t, clutch, treatment, accumulative_prop_hatched, hatched_accumalative, n_eggs, total_hatched, totalprop_acummhatch) %>%
+  arrange(treatment)
+ht # DO STATS ON THISSS
+```
+
+> Here we got rid of all cluthces which had a total of 0 animals hatch.... this would throw off our hatching timing analysis... also the hatching timing here is "out of the total that hatched" so that the y axis will reach 100% at the end
+
+> also starting analysis from 4d- end of hatching so data is not 0 heavy from 0d-4d of no hatching.
+
+```{r}
+dmeanprophatch= ht %>%
+  group_by(age_t, treatment) %>%
+  summarise(meanhatch= mean(totalprop_acummhatch), SE= sd(totalprop_acummhatch)/sqrt(length(totalprop_acummhatch)), sample_size=n()) %>%
+  arrange(treatment)
+dmeanprophatch
+```
+
+#### Summarized data
+```{R}
+g=ggplot(dmeanprophatch, aes(x=age_t, y=meanhatch)) + #add the axis
+  geom_point(aes(color=treatment)) + 
+  geom_line(aes(color = treatment)) +
+  geom_errorbar(aes(ymin=meanhatch-SE, ymax=meanhatch+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
+  labs(y="Proportion embryos hatched", x="Age (days)") + #creat labels... 
+  theme_classic(base_size=20) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.8), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
+  scale_y_continuous(limits=c(0,1), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) 
+  g
+```
+
+```{r}
+library(lme4)
+library(car)
+#full model with treatment, time, and interaction
+fullhatch=glmer(totalprop_acummhatch ~ treatment*age_t + (1 | clutch), family = "binomial", data = ht, weights = total_hatched)
+summary(fullhatch)
+
+Anova(fullhatch)
+```
+
+We can then make a series of more simple, nested models as follows:
+
+```{r}
+#treatment and time
+nointeraction=glmer(totalprop_acummhatch ~ treatment + age_t + (1 | clutch), family = "binomial", data = ht, weights = total_hatched)
+summary(nointeraction)
+
+#just treatment
+noage=glmer(totalprop_acummhatch ~ treatment + (1 | clutch), family = "binomial", data = ht, weights = total_hatched)
+summary(noage)
+
+#just time
+notreatment=glmer(totalprop_acummhatch ~ age_t + (1 | clutch), family = "binomial", data = ht, weights = total_hatched)
+summary(notreatment)
+```
+
+*************************
+
+## Model comparison using **Likelihood Ratio Tests (LRT)**
+
+> Note: The logic of the likelihood ratio test is to compare the likelihood of two models with each other, i.e., a model that includes the factor that we are interested in versus a reduced, nested model with that factor excluded. To get our p-values for each predictor variable we will compare models using the anova() function. We always want to put the reduced model first and then the full model after, making sure to use a Chisquared test.
+
+First, we can use an information theoretic approach to compare our models. This helps us decide which model fits the data the best: model with **lowest AIC**
+```{r}
+library(AICcmodavg)
+print(aictab(list(fullhatch,  nointeraction, noage, notreatment), c("fullhatch", "nointeraction", "noage", "notreatment")), LL = FALSE)
+```
+
+We can see that indeed "rana", the full complex model with interactions, is the best model for our data. Next, we can test to see how much more variance is explained by the random effects than the fixed effects alone...
+```{r}
+library(MuMIn)
+r.squaredGLMM(fullhatch)
+```
+
+Now, we can use the "fullhatch" model as our base model to obtain our p-values using the LRTs...
+
+### **EFFECT OF AGE x TREATMENT**
+```{r}
+anova(nointeraction,fullhatch, test = "Chisq")
+```
+* *X^2* == 363.08
+* *p-value* < 2.2e-16 ***
+
+### **EFFECT OF AGE**
+```{r}
+anova(noage,fullhatch, test = "Chisq")
+```
+* *X^2* == 25493
+* *p-value* == 2.2e-16 ***
+
+### **EFFECT OF TREATMENT**
+```{r}
+anova(notreatment,fullhatch, test = "Chisq")
+```
+* *X^2* == 1320.5
+* *p-value* < 2.2e-16 ***
+
+
