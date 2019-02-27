@@ -1430,7 +1430,8 @@ anova(notreatment,fullhatch, test = "Chisq")
 * *p-value* < 2.2e-16 ***
 
 
-## Onset hatching Stats:
+## **Onset hatching Stats**:
+### Stats
 ```{r}
 m=lm(data=hatchingageatonset, age_t~treatment)
 summary(m)
@@ -1462,6 +1463,29 @@ qqnorm(residuals(m))
 shapiro.test(m$residuals)
 ```
 * shapiro test **p-value** == 0.02
+
+
+***NOT NORMALLY DIST** so stats are NOT good!
+
+#### Nonparametric stats here:
+
+* Wilcoxon rank sum test with continuity correction
+```{r}
+wt=wilcox.test(data=hatchingageatonset, age_t~as.factor(treatment), paired = FALSE, exact = FALSE)
+wt
+```
+* *W* == 294.5; df== 1,
+* treatment **p-value** == 0.001065 ***
+
+
+
+
+
+
+************
+************
+
+
 
 # **Combined Plots**
 ```{r}
