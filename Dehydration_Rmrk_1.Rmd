@@ -1,7 +1,7 @@
 ---
 title: "Dehydration induced hatching in gliding treefrog embryos"
 author: "Katherine González & Brandon Güell"
-date: "20190207"
+date: "7/6/2018"
 output:
   html_document:
     toc: yes
@@ -139,7 +139,7 @@ dtd # ifelse and grepl look for matches in hte colum and give new name for the m
 humid = dtd %>%
   filter(Sensor != "BT1") %>%
   filter(Sensor != "BT2") %>%
-  filter(treatment == "very dry")
+  filter(treatment == "Very dry")
 humid
 
 unique(humid$Type)
@@ -209,28 +209,31 @@ library(ggplot2)
 library(scales)
 legend_title = "Treatment"
 
-g=ggplot(humidtemp, aes(x=age, y=Value)) + #add the axis
-  geom_point(aes(color = Sensor)) +
+temp_vd =ggplot(humidtemp, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor), size = .8) +
   labs(y="Temperature", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
-  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  theme_classic() +
+  theme(legend.position=c(.05,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), axis.ticks = element_line(color = "black")) +
+  scale_color_manual(legend_title, breaks=c("WT1", "WT2"), labels=c("Humid", "Very dry"), values = c("darkblue", "dimgray")) + #this is how you change names of things in legends
   scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
   scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
-g
+temp_vd
+```
 
+```{r}
 library(ggplot2)
 library(scales)
+
 legend_title = "Treatment"
-g=ggplot(humidrh, aes(x=age, y=Value)) + #add the axis
-  geom_point(aes(color = Sensor)) +
-  labs(y="Relative Humidity", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.1), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+humidity_vd =ggplot(humidrh, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor), size = .8) +
+  labs(y="Relative humidity (%)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position=c(.1,.1), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
-  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_color_manual(legend_title, breaks=c("WT1", "WT2"), labels=c("Humid", "Very dry"), values = c("darkblue", "dimgray")) + #this is how you change names of things in legends
   scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
-g
+humidity_vd
 ```
 
 
@@ -332,10 +335,31 @@ kwt
 > THIS IS KEY HERE
 
 
+
+
+
+#### **Combined Plots**
+```{r}
+library(gridExtra)
+library(cowplot)
+
+combined_vd_temp_plots = plot_grid(temp_vd, humidity_vd, labels = "AUTO", scale =1, ncol=1, nrow = 2, align = "v") #align them along y axis on left side
+combined_vd_temp_plots
+```
+
+
+
+
+
 **********************
 **********************
 **********************
 **********************
+
+
+
+
+
 
 
 
@@ -344,7 +368,7 @@ kwt
 humid2 = dtd %>%
   filter(Sensor != "BT1") %>%
   filter(Sensor != "BT2") %>%
-  filter(treatment == "dry")
+  filter(treatment == "Dry")
 humid2
 
 unique(humid2$Type)
@@ -373,7 +397,7 @@ humidtempsum
 * mean temp == 26.71280
 * range temp == 22.729--33.365
 
-> VERY DRY:
+> DRY:
 
 * mean temp == 26.92227
 * range temp == 22.681--34.124
@@ -396,7 +420,7 @@ humidrhsum
 * mean humidity == 99.61825
 * range humidity == 74.2--100
 
-> VERY DRY:
+> DRY:
 
 * mean humidity == 96.31814
 * range humidity == 67.9--100
@@ -413,28 +437,30 @@ library(ggplot2)
 library(scales)
 legend_title = "Treatment"
 
-g=ggplot(humidtemp, aes(x=age, y=Value)) + #add the axis
-  geom_point(aes(color = Sensor)) +
+temp_d =ggplot(humidtemp, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor), size = 1) +
   labs(y="Temperature", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
-  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  theme_classic() +
+  theme(legend.position=c(.05,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), axis.ticks = element_line(color = "black")) +
+  scale_color_manual(legend_title, breaks=c("WT1", "WT2"), labels=c("Humid", "Dry"), values = c("darkblue", "dimgray")) + #this is how you change names of things in legends
   scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
   scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
-g
+temp_d
+```
 
+```{r}
 library(ggplot2)
 library(scales)
 legend_title = "Treatment"
-g=ggplot(humidrh, aes(x=age, y=Value)) + #add the axis
-  geom_point(aes(color = Sensor)) +
-  labs(y="Relative Humidity", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.1,.1), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+humidity_d =ggplot(humidrh, aes(x=age, y=Value)) + #add the axis
+  geom_point(aes(color = Sensor), size = 1) +
+  labs(y="Relative humidity (%)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position="none", legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_y_continuous(oob = rescale_none, breaks= pretty_breaks(n=5)) +
-  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_color_manual(legend_title, breaks=c("WT1", "WT2"), labels=c("Humid", "Dry"), values = c("darkblue", "dimgray")) + #this is how you change names of things in legends
   scale_x_continuous(breaks= pretty_breaks(n=8))   # put the x axis stuff in order that I want.
-g
+humidity_d
 ```
 
 
@@ -536,6 +562,17 @@ kwt
 > THIS IS KEY HERE
 
 
+#### **Combined Plots**
+```{r}
+library(gridExtra)
+library(cowplot)
+
+combined_d_temp_plots = plot_grid(temp_d, humidity_d, labels = "AUTO", scale =1, ncol=1, nrow = 2, align = "v") #align them along y axis on left side
+combined_d_temp_plots
+```
+
+
+
 
 **********************
 **********************
@@ -566,7 +603,7 @@ g=ggplot(verydry, aes(x=age_t, y=clutch_thickness)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
@@ -587,21 +624,21 @@ thicknesssumm
 #### Summarized data:
 ```{r}
 legend_title = "Hydration\ntreatment"
-g=ggplot(thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
+clutch_thickness_vd=ggplot(thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
   geom_point(aes(color=treatment)) + 
   geom_line(aes(color = treatment)) +
   geom_errorbar(aes(ymin=meanthickness-SE, ymax=meanthickness+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
-  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(fill = NA, color = "black", size=1), legend.title = element_blank(), legend.background = element_blank(), legend.position= c(.9,.9), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Clutch thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.title = element_blank(), legend.background = element_blank(), legend.position= c(.9,.9), axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   # put legend inside plot, get rid of legend background, get rid of legend title
   scale_x_continuous(limits=c(.5,6), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
-  scale_color_manual(legend_title, values = c("blue", "darkgrey")) +
-  scale_fill_manual(guide = FALSE, values = c("blue", "darkgrey")) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
   geom_text(aes(y= c(3.8), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(2.6), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5)
-g
+clutch_thickness_vd
 ```
 
 
@@ -655,11 +692,11 @@ g=ggplot(verydry, aes(x=age_t, y=average_egg_size)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Average egg size (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
-  scale_color_manual(legend_title, values = c("blue", "darkgrey")) +
-  scale_fill_manual(guide = FALSE, values = c("blue", "darkgrey")) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
   facet_grid(treatment~.) # ()
   g
 ```
@@ -674,22 +711,22 @@ eggsizesum
 
 #### Summarized data:
 ```{r}
-g=ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
+egg_size_vd = ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
   geom_point(aes(color=treatment)) + 
   geom_line(aes(color = treatment)) +
   geom_errorbar(aes(ymin=meaneggsize-SE, ymax=meaneggsize+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
-  labs(y="Mean egg size (mm)", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Egg size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position= "none", legend.background = element_blank(), legend.title = element_blank(), axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(.5,6), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(limits=c(2.5,4.5), breaks= pretty_breaks(n=7)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
-  scale_color_manual(legend_title, values = c("blue", "darkgrey")) +
-  scale_fill_manual(guide = FALSE, values = c("blue", "darkgrey")) +
+  scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
   geom_text(aes(y= c(3.75), x= c(1.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(3.3), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(3.05), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(3.0), x= c(4.75), label= "***"), color= "black", vjust = 0, size = 5) 
-  g
+egg_size_vd
 ```
 
 > photos were not taken (measurements not done) at 5d 18:00 for humid due to sensitivity of clutches to hatching
@@ -773,17 +810,18 @@ survivalsumm
 ### Visualization
 ```{r}
 legend_title = "Hydration Treatment"
-g=ggplot(survivalsumm, aes(x=treatment, y=meansurvivalsum)) + #add the axis
+survivorhsip =ggplot(survivalsumm, aes(x=treatment, y=meansurvivalsum)) + #add the axis
+  geom_errorbar(aes(ymin=meansurvivalsum-SE, ymax=meansurvivalsum+SE), color = "black", width= .05, size= .5, position=position_dodge(.9) ) +
   geom_bar(stat="identity", aes(fill=treatment), position=position_dodge(.9), width = .9) + # use barplots w/time of day filled w/color
-  geom_errorbar(aes(ymin=meansurvivalsum-SE, ymax=meansurvivalsum+SE, color = treatment), width= .05, size= .5, position=position_dodge(.9) ) +
-  labs(y="Proportion survived", x="Hydration treatment") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="none", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Proportion survived") + #creat labels... 
+  theme_classic() +
+  theme(legend.position="none", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_y_continuous(limits = c(0,1.1), expand = c(0, 0), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
   scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
-  geom_text(aes(y= 1, x = "humid", label= "***"), color= "black", vjust = 0, size = 5) #add significance star/astrix
-g
+  geom_text(aes(y= 1.02, x = 1.5, label= "***"), color= "black", vjust = 0, size = 5) + #add significance star/astrix 
+  geom_segment(aes(x = 1, y = 1.02, xend = 2, yend = 1.02)) # add line segment 
+survivorhsip
 ```
 
 ### Stats:
@@ -819,6 +857,15 @@ kwt
 
 
 
+
+# **Combined Plots**
+```{r}
+library(gridExtra)
+library(cowplot)
+
+combined_vd_plots = plot_grid(clutch_thickness_vd, egg_size_vd, survivorhsip, NULL, labels = c('A','B','C', 'D'), scale =1, ncol=2, nrow = 2)
+combined_vd_plots
+```
 
 
 
@@ -862,7 +909,7 @@ g=ggplot(dry, aes(x=age_t, y=clutch_thickness)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
@@ -874,7 +921,7 @@ g=ggplot(dry, aes(x=age_t, y=average_egg_size)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Average egg size (cm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
@@ -886,7 +933,7 @@ g=ggplot(dry, aes(x=age_t, y=average_tad_length)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Average tadpole length (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(3.5,8.5), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
@@ -898,7 +945,7 @@ g=ggplot(dry, aes(x=age_t, y=dry$accumulative_prop_hatched)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Proportion embryos hatched", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(limits=c(0,1), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
@@ -911,11 +958,11 @@ g=ggplot(dry, aes(x=age_t, y=dry$accumulative_prop_hatched)) + #add the axis
 ### Visualizations:
 #### Raw data
 ```{r}
-g=ggplot(dry, aes(x=age_t, y=clutch_thickness)) + #add the axis
+g =ggplot(dry, aes(x=age_t, y=clutch_thickness)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(0,6), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
@@ -946,13 +993,13 @@ thicknesssumm
 
 #### Summarized data:
 ```{r}
-g=ggplot(data = thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
+clutch_thickness_d =ggplot(data = thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
   geom_point(aes(color=treatment)) + 
   geom_line(aes(color = treatment)) +
   geom_errorbar(aes(ymin=meanthickness-SE, ymax=meanthickness+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
-  labs(y="Clutch maximum thickness (mm)", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position=c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Clutch thickness (mm)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position= "none", legend.background = element_blank(), legend.title = element_blank(), axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(0,4.8), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values =  c("darkblue","dimgray")) +
@@ -960,7 +1007,7 @@ g=ggplot(data = thicknesssumm, aes(x=age_t, y=meanthickness)) + #add the axis
   geom_text(aes(y= c(4.56), x= c(1.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(4.3), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(4.55), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5)
-g
+clutch_thickness_d
 ```
 
 
@@ -1004,7 +1051,7 @@ kwt
 * treatment **p-value** == 4.941e-12 ***
 
 * *X^2* == 15.819; df== 5,230
-* treatment **p-value** == 0.007381 ***
+* age **p-value** == 0.007381 ***
 
 
 
@@ -1029,9 +1076,9 @@ test
 ```{r}
 g=ggplot(dry, aes(x=age_t, y=average_egg_size)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
-  labs(y="Average egg size (mm)", x="Age (days)") + #creat labels... 
+  labs(y="Egg size (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits =c(0,5), breaks= pretty_breaks(n=6)) + # allows fo.. only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values =c("darkblue","dimgray")) +
@@ -1057,13 +1104,13 @@ eggsizesum
 #### Summarized data:
 ```{r}
 legend_title = "Treatment"
-g=ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
+egg_size_d =ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
   geom_point(aes(color=treatment)) + 
   geom_line(aes(color = treatment)) +
   geom_errorbar(aes(ymin=meaneggsize-SE, ymax=meaneggsize+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
-  labs(y="Mean egg size (mm)", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Egg size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position= "none", legend.background = element_blank(), legend.title = element_blank(), axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(0,6), breaks= pretty_breaks(n=5)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue","dimgray")) +
@@ -1072,7 +1119,7 @@ g=ggplot(eggsizesum, aes(x=age_t, y=meaneggsize)) + #add the axis
   geom_text(aes(y= c(3.425), x= c(2.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(3.475), x= c(3.75), label= "***"), color= "black", vjust = 0, size = 5) +
   geom_text(aes(y= c(3.35), x= c(4.75), label= "***"), color= "black", vjust = 0, size = 5)
-g
+egg_size_d
 ```
 
 > photos were not taken (measurements not done) at 5d 18:00 for humid due to sensitivity of clutches to hatching...
@@ -1121,9 +1168,9 @@ shapiro.test(m$residuals)
 ```{r}
 g=ggplot(dry, aes(x=age_t, y=average_tad_length)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
-  labs(y="Average tadpole length (mm)", x="Age (days)") + #creat labels... 
+  labs(y="Hatchling size (mm)", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(4.5,8.5), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
@@ -1142,18 +1189,18 @@ tadpolelengthsum = dry %>%
 
 #### Summarized data:
 ```{r}
-g=ggplot(data = tadpolelengthsum, aes(x=age_t, y=meantadpolelength)) + #add the axis
+tadpole_length =ggplot(data = tadpolelengthsum, aes(x=age_t, y=meantadpolelength)) + #add the axis
   geom_point(aes(color=treatment)) + 
   geom_line(aes(color = treatment)) +
   geom_errorbar(aes(ymin=meantadpolelength-SE, ymax=meantadpolelength+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
-  labs(y="Mean hatchling length (mm)", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=18) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.9), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Hatchling size (mm)", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position= "none", legend.background = element_blank(), legend.title = element_blank(), axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(limits=c(4.75,8.5),breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(limits=c(8.5,14), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values =  c("darkblue", "dimgray")) +
   scale_fill_manual(guide = FALSE, values =  c("darkblue", "dimgray")) 
-g
+tadpole_length
 ```
 
 
@@ -1196,7 +1243,7 @@ kwt
  ***
 
 * *X^2* == 43.234; df== 11,
-* treatment **p-value** == 9.889e-06 ***
+* age **p-value** == 9.889e-06 ***
 
 
 
@@ -1220,7 +1267,7 @@ g=ggplot(dry, aes(x=age_t, y=dry$accumulative_prop_hatched)) + #add the axis
   geom_point(aes(color=treatment)) + #make lines different colors... these are lines drawn b/t  the means, then make lines thicker... size="must be outside of aes"
   labs(y="Proportion embryos hatched", x="Age (days)") + #creat labels... 
   theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  theme(panel.background = element_rect(colour = "black", size=1), legend.position="right", axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(limits=c(0,1), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
@@ -1241,7 +1288,7 @@ ht = dry %>%
   
   
   
-  dplyr::select(age_t, clutch, treatment, accumulative_prop_hatched, hatched_accumalative, n_eggs, total_hatched, totalprop_acummhatch) %>%
+  dplyr::select(age_t, clutch, treatment, accumulative_prop_hatched, hatched_time_point, hatched_accumalative, n_eggs, total_hatched, totalprop_acummhatch) %>%
   arrange(treatment)
 ht # DO STATS ON THISSS
 ```
@@ -1258,20 +1305,61 @@ dmeanprophatch= ht %>%
 dmeanprophatch
 ```
 
+##### Mean hatching age
+```{r}
+meanhatchingagesum = ht %>%
+  group_by(treatment, clutch) %>%
+  filter(hatched_time_point != 0) %>%
+  summarise(meanhatchingage = mean(age_t))
+meanhatchingagesum
+
+
+meanhatchingagesumsum = meanhatchingagesum %>%
+  group_by(treatment) %>%
+  summarise(meanage = mean(meanhatchingage),  SE= sd(meanhatchingage)/sqrt(length(meanhatchingage)), samplesize= n())
+meanhatchingagesumsum
+  
+```
+
+* *mean hatching age HUMID* == 6.043478 +/- 0.09750533 N = 23
+* *mean hatching age DRY* == 5.479167 +/- 0.07453560  N =16
+
+##### Mean age at hatching onset
+```{r}
+hatchingageatonset = ht %>%
+  group_by(treatment, clutch) %>%
+  filter(hatched_time_point != 0) %>% # get only data with hatching positive
+  filter(age_t == min(age_t)) # get only first age with hatching per clutch
+hatchingageatonset
+
+hatchingageatonsetsum = hatchingageatonset %>%
+  group_by(treatment) %>%
+  summarise(meanage = mean(age_t),  SE= sd(age_t)/sqrt(length(age_t)), samplesize= n())
+hatchingageatonsetsum
+```
+
+* *mean hatching onset age HUMID* == 5.70 +/- 0.09 N = 23
+* *mean hatching onset age DRY* == 5.14 +/- 0.085  N =16
+
+
 #### Summarized data
 ```{R}
-g=ggplot(dmeanprophatch, aes(x=age_t, y=meanhatch)) + #add the axis
+hatching_timing =ggplot(dmeanprophatch, aes(x=age_t, y=meanhatch)) + #add the axis
   geom_point(aes(color=treatment)) + 
   geom_line(aes(color = treatment)) +
   geom_errorbar(aes(ymin=meanhatch-SE, ymax=meanhatch+SE), width= .05, size= .5, position=position_dodge(.9), color = "black") +
-  labs(y="Proportion embryos hatched", x="Age (days)") + #creat labels... 
-  theme_classic(base_size=20) +
-  theme(panel.background = element_rect(colour = "black", size=1), legend.position= c(.9,.8), legend.background = element_blank(), legend.title = element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black")) +
+  labs(y="Proportion hatched", x="Age (days)") + #creat labels... 
+  theme_classic() +
+  theme(legend.position= c(.9,.8), legend.background = element_blank(), legend.title = element_blank(), axis.text = element_text(color="black"), axis.ticks = element_line(color = "black")) +
   scale_x_continuous(breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on x axis... only showing 4 and 5 values...
   scale_y_continuous(limits=c(0,1), breaks= pretty_breaks(n=6)) + # allows for making "pretty" breaks on y axis... shows 5 breaks
   scale_color_manual(legend_title, values = c("darkblue", "dimgray")) +
-  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) 
-  g
+  scale_fill_manual(guide = FALSE, values = c("darkblue", "dimgray")) +
+  geom_segment(aes(x = 5.7, y = .9, xend = 5.7, yend = 0.7),
+                  arrow = arrow(length = unit(0.2, "cm"), type = "closed"), color = "darkblue", size=.5) +
+  geom_segment(aes(x = 5.14, y = .9, xend = 5.14, yend = .7),
+                  arrow = arrow(length = unit(0.2, "cm"), type = "closed"), color = "dimgray", size=.5)
+hatching_timing
 ```
 
 ```{r}
@@ -1340,5 +1428,48 @@ anova(notreatment,fullhatch, test = "Chisq")
 ```
 * *X^2* == 1320.5
 * *p-value* < 2.2e-16 ***
+
+
+## Onset hatching Stats:
+```{r}
+m=lm(data=hatchingageatonset, age_t~treatment)
+summary(m)
+
+library(car)
+Anova(m)
+```
+
+```{r}
+n=t.test(data=hatchingageatonset, age_t~treatment)
+n
+hist(hatchingageatonset$age_t)
+library(car)
+Anova(m)
+```
+* *F value* == 50.28; df== 3,86
+* overall treatment **p-value** == < 2.2e-16 ***
+
+* treatment        F= 62.222  8.904e-12 ***
+* age_t            F= 26.089  9.311e-06 ***
+* treatment:age_t  F= 0.103   0.7491 NS
+
+
+Check for normality
+```{r}
+plot(fitted(m), residuals(m))
+hist(residuals(m))
+qqnorm(residuals(m))
+shapiro.test(m$residuals)
+```
+* shapiro test **p-value** == 0.02
+
+# **Combined Plots**
+```{r}
+library(gridExtra)
+library(cowplot)
+
+combined_d_plots = plot_grid(clutch_thickness_d, egg_size_d, tadpole_length, hatching_timing, labels = c('A','B','C', 'D'), scale =1, ncol=2, nrow = 2)
+combined_d_plots
+```
 
 
